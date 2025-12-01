@@ -81,10 +81,15 @@ async function runCommit() {
         ollamaUrl: config?.cloud?.url
     });
 
-    // 4. Parse groups
+    // 4. Parse groups (markdown code block temizle)
     let groups;
     try {
-        groups = JSON.parse(groupResponse);
+        let jsonStr = groupResponse.trim();
+        // ```json ... ``` formatını temizle
+        if (jsonStr.startsWith('```')) {
+            jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+        }
+        groups = JSON.parse(jsonStr);
     } catch (e) {
         throw new Error('AI returned invalid JSON: ' + groupResponse.slice(0, 200));
     }
