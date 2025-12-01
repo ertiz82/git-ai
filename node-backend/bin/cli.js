@@ -56,9 +56,11 @@ async function runCommit() {
 
     console.log(`Found ${diffResult.files.length} changed file(s)`);
 
-    // 2. API key kontrol
+    // 2. API key kontrol (Ollama için gerekli değil)
+    const provider = process.env.AI_PROVIDER || 'anthropic';
     const apiKey = process.env.CLOUD_AI_API_KEY || config?.cloud?.apiKey;
-    if (!apiKey) {
+
+    if (provider !== 'ollama' && !apiKey) {
         throw new Error('CLOUD_AI_API_KEY missing (set env or in jira.local.json under cloud.apiKey)');
     }
 
@@ -134,7 +136,70 @@ async function runCommit() {
 }
 
 async function callCloudAI(apiKey, prompt, opts = {}) {
-    const url = process.env.CLOUD_AI_API_URL || 'https://api.anthropic.com/v1/messages';
+    const provider = process.env.AI_PROVIDER || 'anthropic';
+    const model = process.env.CLOUD_AI_MODEL;
+
+    if (provider === 'ollama') {
+        return callOllama(prompt, model || 'llama3.2', opts);
+    } else if (provider === 'openai') {
+        return callOpenAI(apiKey, prompt, model || 'gpt-3.5-turbo', opts);
+    } else {
+        return callAnthropic(apiKey, prompt, model || 'claude-3-haiku-20240307', opts);
+    }
+}
+
+async function callOllama(prompt, model, opts = {}) {
+    const url = process.env.OLLAMA_URL || 'http://localhost:11434/api/generate';
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model,
+            prompt,
+            stream: false,
+            options: {
+                num_predict: opts.maxTokens || 500
+            }
+        })
+    });
+
+    if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Ollama error ${res.status}: ${txt}`);
+    }
+
+    const json = await res.json();
+    return json.response || '';
+}
+
+async function callOpenAI(apiKey, prompt, model, opts = {}) {
+    const url = process.env.OPENAI_URL || 'https://api.openai.com/v1/chat/completions';
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            model,
+            max_tokens: opts.maxTokens || 500,
+            messages: [{ role: 'user', content: prompt }]
+        })
+    });
+
+    if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`OpenAI error ${res.status}: ${txt}`);
+    }
+
+    const json = await res.json();
+    return json.choices?.[0]?.message?.content || '';
+}
+
+async function callAnthropic(apiKey, prompt, model, opts = {}) {
+    const url = process.env.ANTHROPIC_URL || 'https://api.anthropic.com/v1/messages';
 
     const res = await fetch(url, {
         method: 'POST',
@@ -144,22 +209,19 @@ async function callCloudAI(apiKey, prompt, opts = {}) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            model: process.env.CLOUD_AI_MODEL || 'claude-3-haiku-20240307',
+            model,
             max_tokens: opts.maxTokens || 500,
-            messages: [
-                { role: 'user', content: prompt }
-            ]
+            messages: [{ role: 'user', content: prompt }]
         })
     });
 
     if (!res.ok) {
         const txt = await res.text();
-        throw new Error(`API error ${res.status}: ${txt}`);
+        throw new Error(`Anthropic error ${res.status}: ${txt}`);
     }
 
     const json = await res.json();
-    // Anthropic response: { content: [{ type: 'text', text: '...' }] }
-    return json.content?.[0]?.text || JSON.stringify(json);
+    return json.content?.[0]?.text || '';
 }
 
 main();
