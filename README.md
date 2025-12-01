@@ -6,10 +6,12 @@ git-ai analyzes your code changes, intelligently groups related modifications, a
 
 ## Features
 
+- **Interactive Setup**: `git-ai init` configures everything with guided prompts
 - **Smart Grouping**: AI analyzes diffs and groups related changes together
 - **Auto Commit Messages**: Generates descriptive commit messages based on changes
-- **JIRA Integration**: Extracts ticket info from branch names (e.g., `feature/SCRUM-123-description`)
-- **Multi-Provider Support**: Works with Ollama (local), Anthropic, or OpenAI
+- **Multi-Provider Support**: Ollama (local), Google Gemini, OpenAI, or Anthropic
+- **JIRA Integration**: Extracts ticket info from branch names
+- **Missing File Detection**: Automatically catches files AI might miss
 - **Token Efficient**: Sends minimal diffs to reduce API costs
 - **Dry Run Mode**: Preview commits before executing
 
@@ -34,42 +36,134 @@ npm link
 ## Quick Start
 
 ```bash
-# 1. Configure AI provider (choose one)
-
-# Option A: Ollama (Free, Local)
-export AI_PROVIDER=ollama
-export CLOUD_AI_MODEL=gemma3:4b
-ollama pull gemma3:4b
-
-# Option B: Anthropic
-export AI_PROVIDER=anthropic
-export CLOUD_AI_API_KEY=sk-ant-xxxxx
-
-# Option C: OpenAI
-export AI_PROVIDER=openai
-export CLOUD_AI_API_KEY=sk-xxxxx
-
-# 2. Use git-ai
+# Navigate to your project
 cd your-project
-# make some changes...
+
+# Initialize git-ai (interactive setup)
+git-ai init
+
+# Make some changes, then commit
 git-ai commit --dry-run  # preview
 git-ai commit            # execute
 ```
 
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `git-ai init` | Interactive setup wizard |
+| `git-ai commit` | Analyze, group, and commit changes |
+| `git-ai commit --dry-run` | Preview without committing |
+| `git-ai help` | Show help |
+| `git-ai version` | Show version |
+
+## AI Providers
+
+### Ollama (Free, Local)
+
+Free, private, runs locally. **Recommended for most users.**
+
+| Model | Description | Size |
+|-------|-------------|------|
+| `gemma3:4b` | Recommended, fast | 3.3GB |
+| `llama3.2` | Meta compact model | 2.0GB |
+| `llama3.3` | High performance | 43GB |
+| `qwen2.5-coder:7b` | Code optimized | 4.7GB |
+| `qwen3` | Latest Qwen generation | 4.7GB |
+| `deepseek-r1:8b` | Reasoning model | 4.9GB |
+| `codellama:7b` | Code generation | 3.8GB |
+| `mistral` | General purpose | 4.1GB |
+| `phi4` | Microsoft SOTA | 9.1GB |
+| `gemma2:9b` | Google efficient | 5.4GB |
+
+### Google Gemini
+
+Best price-performance for cloud.
+
+| Model | Description | Cost |
+|-------|-------------|------|
+| `gemini-2.5-flash` | Best price-performance | $0.075/1M tokens |
+| `gemini-2.5-flash-lite` | Fastest, cheapest | $0.02/1M tokens |
+| `gemini-2.5-pro` | Advanced reasoning | $1.25/1M tokens |
+| `gemini-2.0-flash` | Second-gen workhorse | $0.10/1M tokens |
+| `gemini-3-pro-preview` | Most intelligent | $2.50/1M tokens |
+
+Get API key: [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+
+### OpenAI (GPT)
+
+| Model | Description | Cost |
+|-------|-------------|------|
+| `gpt-4.1-nano` | Fastest, cheapest | $0.10/1M tokens |
+| `gpt-4.1-mini` | Good balance | $0.40/1M tokens |
+| `gpt-4.1` | Best for coding | $2.00/1M tokens |
+| `gpt-4o-mini` | Fast multimodal | $0.15/1M tokens |
+| `gpt-4o` | Omni multimodal | $2.50/1M tokens |
+| `o3-mini` | Reasoning model | $1.10/1M tokens |
+
+Get API key: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+
+### Anthropic (Claude)
+
+Best quality for complex code analysis.
+
+| Model | Description | Cost |
+|-------|-------------|------|
+| `claude-haiku-4-5-20251001` | Fastest | $0.25/1M tokens |
+| `claude-sonnet-4-5-20250929` | Best balance | $3/1M tokens |
+| `claude-opus-4-5-20251101` | Most capable | $15/1M tokens |
+| `claude-3-5-haiku-20241022` | Fast legacy | $0.25/1M tokens |
+| `claude-3-haiku-20240307` | Budget legacy | $0.25/1M tokens |
+
+Get API key: [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
+
 ## Configuration
 
-### Environment Variables
+### Using `git-ai init` (Recommended)
+
+The easiest way to configure git-ai:
+
+```bash
+git-ai init
+```
+
+This will:
+1. Ask which AI provider to use
+2. Show available models with descriptions and pricing
+3. For Ollama: Install if needed, pull selected model
+4. For cloud providers: Ask for API key
+5. Configure maxTokens setting
+6. Create `jira.local.json` configuration file
+7. Optionally create `jira.json` for JIRA integration
+8. Add `jira.local.json` to `.gitignore`
+
+### Manual Configuration
+
+#### Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `AI_PROVIDER` | AI provider: `ollama`, `anthropic`, `openai` | `anthropic` |
+| `AI_PROVIDER` | `ollama`, `gemini`, `openai`, `anthropic` | `anthropic` |
 | `CLOUD_AI_API_KEY` | API key (not needed for Ollama) | - |
 | `CLOUD_AI_MODEL` | Model name | Provider default |
 | `OLLAMA_URL` | Ollama API URL | `http://localhost:11434/api/generate` |
 
-### Project Configuration
+#### Project Configuration Files
 
-Create `jira.json` in your project root for JIRA integration:
+**`jira.local.json`** - AI provider settings (add to `.gitignore`):
+
+```json
+{
+  "cloud": {
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "apiKey": "your-api-key",
+    "maxTokens": 4000
+  }
+}
+```
+
+**`jira.json`** - JIRA integration (can be committed):
 
 ```json
 {
@@ -85,86 +179,48 @@ Create `jira.json` in your project root for JIRA integration:
 }
 ```
 
-For sensitive data, create `jira.local.json` (add to `.gitignore`):
+## Usage Examples
 
-```json
-{
-  "cloud": {
-    "provider": "ollama",
-    "model": "gemma3:4b"
-  }
-}
-```
-
-Or for Anthropic/OpenAI:
-
-```json
-{
-  "cloud": {
-    "provider": "anthropic",
-    "apiKey": "sk-ant-xxxxx"
-  }
-}
-```
-
-## Usage
-
-### Basic Commands
+### Basic Workflow
 
 ```bash
-git-ai commit           # Analyze, group, and commit changes
-git-ai commit --dry-run # Preview without committing
-git-ai help             # Show help
-git-ai version          # Show version
-```
-
-### Workflow Example
-
-```bash
-# 1. Make changes to multiple files
+# Make changes to multiple files
 vim src/auth/login.js
 vim src/auth/logout.js
 vim src/utils/helpers.js
 vim README.md
 
-# 2. Preview what git-ai will do
+# Preview what git-ai will do
 git-ai commit --dry-run
 
 # Output:
 # Found 4 changed file(s)
+# Using AI provider: gemini
 # Analyzing changes...
 # Grouped into 2 commit(s)
 #
 # --- DRY RUN ---
 # Files: src/auth/login.js, src/auth/logout.js
-# Message:
-# Authentication improvements
-#
-# Updated login and logout functionality
+# Message: Add authentication features
 # ---------------
 #
 # --- DRY RUN ---
 # Files: src/utils/helpers.js, README.md
-# Message:
-# Documentation and utilities update
-#
-# Updated helper functions and documentation
+# Message: Update utilities and documentation
 # ---------------
 
-# 3. Execute commits
+# Execute commits
 git-ai commit
 ```
 
-### Branch Naming for JIRA
-
-git-ai automatically detects JIRA tickets from branch names:
+### With JIRA Integration
 
 ```bash
-# Supported patterns:
-feature/SCRUM-123-add-login
-hotfix/SCRUM-456-fix-crash
-bugfix/SCRUM-789-resolve-issue
-task/SCRUM-012-update-deps
+# Create branch with JIRA ticket
+git checkout -b feature/SCRUM-123-add-login
+
+# Make changes and commit
+git-ai commit
 
 # Commit message will include:
 # SCRUM-123: Add login functionality
@@ -174,125 +230,54 @@ task/SCRUM-012-update-deps
 # https://your-domain.atlassian.net/browse/SCRUM-123
 ```
 
-## AI Providers
-
-### Ollama (Recommended for Local Use)
-
-Free, private, runs locally.
-
-```bash
-# Install Ollama
-brew install ollama
-
-# Start server
-ollama serve
-
-# Pull a model
-ollama pull llama3.2          # General purpose
-ollama pull qwen2.5-coder:7b  # Code-optimized
-ollama pull codellama:7b      # Code-optimized
-
-# Configure
-export AI_PROVIDER=ollama
-export CLOUD_AI_MODEL=llama3.2
-```
-
-### Anthropic (Claude)
-
-Best quality, requires API key.
-
-```bash
-export AI_PROVIDER=anthropic
-export CLOUD_AI_API_KEY=sk-ant-xxxxx
-export CLOUD_AI_MODEL=claude-3-haiku-20240307  # Fast & cheap
-# or claude-3-5-sonnet-20241022 for better quality
-```
-
-Get API key: [console.anthropic.com](https://console.anthropic.com/settings/keys)
-
-### OpenAI (GPT)
-
-```bash
-export AI_PROVIDER=openai
-export CLOUD_AI_API_KEY=sk-xxxxx
-export CLOUD_AI_MODEL=gpt-3.5-turbo  # Fast & cheap
-# or gpt-4o for better quality
-```
-
-Get API key: [platform.openai.com](https://platform.openai.com/api-keys)
-
 ## Shell Configuration
 
 Add to your `~/.zshrc` or `~/.bashrc`:
 
 ```bash
-# git-ai configuration
-export AI_PROVIDER=ollama
-export CLOUD_AI_MODEL=gemma3:4b
-
-# Alias for quick access
+# Aliases for quick access
 alias gac='git-ai commit'
 alias gacd='git-ai commit --dry-run'
+alias gai='git-ai init'
 ```
 
 ## How It Works
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    git-ai commit                         │
+│                    git-ai commit                        │
 └─────────────────────────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────┐
-│  1. Collect Changes                                      │
-│     - git status --porcelain                            │
+│  1. Collect Changes                                     │
+│     - git status --porcelain -uall                      │
 │     - git diff (minimal, max 100 lines/file)            │
 └─────────────────────────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────┐
-│  2. AI Analysis (Single API Call)                        │
+│  2. AI Analysis (Single API Call)                       │
 │     - Send file list + diffs to AI                      │
-│     - AI groups related changes                          │
+│     - AI groups related changes                         │
 │     - Returns JSON: [{title, summary, files}]           │
 └─────────────────────────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────┐
-│  3. Generate Commits (Local, No API)                     │
-│     - For each group:                                    │
-│       - git add <files>                                  │
-│       - Build commit message from template              │
-│       - git commit -m "<message>"                        │
+│  3. Missing File Detection                              │
+│     - Compare AI response with actual file list         │
+│     - Auto-add missed files to "remaining" group        │
 └─────────────────────────────────────────────────────────┘
-```
-
-## Project Structure
-
-```
-git-ai/
-├── node-backend/
-│   ├── bin/
-│   │   ├── cli.js              # Main CLI entry point
-│   │   └── lib/
-│   │       ├── git-utils.js    # Git operations
-│   │       ├── prompt-templates.js
-│   │       ├── commit-template.js
-│   │       └── prompts/
-│   │           ├── prompt-group.stub
-│   │           ├── prompt-commit.stub
-│   │           └── prompt-issue.stub
-│   ├── package.json
-│   ├── jira.example.json
-│   └── jira.local.example.json
-├── brew/
-│   └── formula/
-│       └── git-ai.rb
-├── zsh-plugin/
-│   ├── git-ai.plugin.zsh
-│   └── bin/git-ai
-├── LICENSE
-└── README.md
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  4. Generate Commits (Local, No API)                    │
+│     - For each group:                                   │
+│       - git add <files>                                 │
+│       - Build commit message from template              │
+│       - git commit -m "<message>"                       │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ## Troubleshooting
@@ -307,14 +292,13 @@ git status
 ### "AI returned invalid JSON"
 
 The AI model may not be following instructions. Try:
-- A different model (`llama3.2` works well)
+- A different model (`gemini-2.5-flash` or `llama3.2` work well)
 - Increase `maxTokens` if response is cut off (default: 4000)
 
-Add to `jira.local.json`:
 ```json
 {
   "cloud": {
-    "maxTokens": 6000
+    "maxTokens": 8000
   }
 }
 ```
@@ -326,16 +310,43 @@ Start Ollama server:
 ollama serve
 ```
 
+Or run `git-ai init` to auto-start.
+
 ### "API error 401"
 
-Check your API key:
+Check your API key in `jira.local.json` or environment:
 ```bash
 echo $CLOUD_AI_API_KEY
 ```
 
 ### Files not being committed
 
-AI might return wrong file paths. The tool validates and filters invalid paths automatically. Check the warning messages.
+git-ai automatically detects and groups files that AI might miss. Check the warning message:
+```
+⚠ AI missed 5 file(s), adding to miscellaneous group
+```
+
+## Project Structure
+
+```
+git-ai/
+├── node-backend/
+│   ├── bin/
+│   │   ├── cli.js              # Main CLI entry point
+│   │   └── lib/
+│   │       ├── git-utils.js    # Git operations
+│   │       ├── prompt-templates.js
+│   │       ├── commit-template.js
+│   │       └── prompts/
+│   │           └── prompt-group.stub
+│   ├── package.json
+│   ├── jira.example.json
+│   └── jira.local.example.json
+├── Formula/
+│   └── git-ai.rb
+├── LICENSE
+└── README.md
+```
 
 ## Contributing
 
