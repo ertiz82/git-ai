@@ -75,7 +75,7 @@ async function runCommit() {
 
     console.log('Analyzing changes...');
     const groupResponse = await callCloudAI(apiKey, groupPrompt, {
-        maxTokens: 800,
+        maxTokens: 2000,
         provider,
         model,
         ollamaUrl: config?.cloud?.url
