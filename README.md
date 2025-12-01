@@ -38,7 +38,8 @@ npm link
 
 # Option A: Ollama (Free, Local)
 export AI_PROVIDER=ollama
-ollama pull llama3.2
+export CLOUD_AI_MODEL=gemma3:4b
+ollama pull gemma3:4b
 
 # Option B: Anthropic
 export AI_PROVIDER=anthropic
@@ -89,6 +90,18 @@ For sensitive data, create `jira.local.json` (add to `.gitignore`):
 ```json
 {
   "cloud": {
+    "provider": "ollama",
+    "model": "gemma3:4b"
+  }
+}
+```
+
+Or for Anthropic/OpenAI:
+
+```json
+{
+  "cloud": {
+    "provider": "anthropic",
     "apiKey": "sk-ant-xxxxx"
   }
 }
@@ -215,7 +228,7 @@ Add to your `~/.zshrc` or `~/.bashrc`:
 ```bash
 # git-ai configuration
 export AI_PROVIDER=ollama
-export CLOUD_AI_MODEL=llama3.2
+export CLOUD_AI_MODEL=gemma3:4b
 
 # Alias for quick access
 alias gac='git-ai commit'

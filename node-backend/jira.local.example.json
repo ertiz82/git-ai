@@ -1,7 +1,6 @@
 {
   "cloud": {
     "provider": "ollama",
-    "model": "llama3.2",
-    "url": "http://localhost:11434/api/generate"
+    "model": "gemma3:4b"
   }
 }
