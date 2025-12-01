@@ -137,8 +137,16 @@ async function runCommit() {
         // git add
         await execa('git', ['add', '--'].concat(verifiedFiles), { cwd: repoRoot });
 
-        // git commit
-        await execa('git', ['commit', '-m', commitMessage], { cwd: repoRoot });
+        // Staged değişiklik var mı kontrol et
+        const { stdout: staged } = await execa('git', ['diff', '--cached', '--name-only'], { cwd: repoRoot });
+        if (!staged.trim()) {
+            console.log(`⚠ Skipping group "${group.title}" - no staged changes`);
+            continue;
+        }
+
+        // git commit (mesajı tek satıra indir)
+        const safeMessage = commitMessage.replace(/\n+/g, ' ').trim();
+        await execa('git', ['commit', '-m', safeMessage], { cwd: repoRoot });
 
         console.log(`✓ Committed: ${group.title || verifiedFiles.join(', ')}`);
     }
