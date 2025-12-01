@@ -1,0 +1,22 @@
+{
+  "project": {
+    "key": "SCRUM",
+    "id": "10000",
+    "name": "Project Name",
+    "url": "https://your-domain.atlassian.net/browse/SCRUM"
+  },
+  "jira": {
+    "baseUrl": "https://your-domain.atlassian.net",
+    "apiVersion": "3"
+  },
+  "issueTypes": {
+    "epic": "10001",
+    "task": "10003",
+    "story": "10004",
+    "feature": "10005",
+    "bug": "10007",
+    "subtask": "10002"
+  },
+  "commitPrefix": "SCRUM",
+  "branchPattern": "feature/{prefix}-{issueNumber}-{description}"
+}

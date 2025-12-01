@@ -1,0 +1,1 @@
+chmod +x zsh-plugin/bin/git-ai.

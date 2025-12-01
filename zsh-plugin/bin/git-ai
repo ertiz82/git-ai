@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# launcher that finds node backend or bundled one
+set -euo pipefail
+
+
+# If NODE path provided via env, prefer it
+if [[ -n "${GIT_AI_NODE_BIN:-}" ]]; then
+NODE_BIN="$GIT_AI_NODE_BIN"
+else
+NODE_BIN="$(command -v node || true)"
+fi
+
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/node-backend"
+
+
+if [[ -x "$NODE_BIN" && -f "$SCRIPT_DIR/bin/cli.js" ]]; then
+exec "$NODE_BIN" "$SCRIPT_DIR/bin/cli.js" "$@"
+fi
+
+
+# Fallback: try /usr/local/bin/git-ai
+if command -v git-ai >/dev/null 2>&1; then
+exec git-ai "$@"
+fi
+
+
+echo "git-ai: backend not found. Install Node backend and ensure node is available." >&2
+exit 2

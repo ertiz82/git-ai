@@ -1,0 +1,24 @@
+Bir commit mesajı üret.
+
+Input:
+- Change summary: {{CHANGE_SUMMARY}}
+- Branch: {{BRANCH}}
+- Jira prefix: {{JIRA_PREFIX}}
+- Issue numarası: {{ISSUE_NUMBER}}
+- Issue URL: {{ISSUE_URL}}
+
+Kurallar:
+- Commit title tek satır ve maksimum 72 karakter olacak
+- Title formatı: "{{JIRA_PREFIX}}-{{ISSUE_NUMBER}}: Kısa açıklama"
+- Açıklama 2-3 satırı geçmeyecek
+- Mesaj altına issue linkini ekle
+- Türkçe veya İngilizce olabilir (değişiklik diline göre)
+
+Format:
+{{JIRA_PREFIX}}-{{ISSUE_NUMBER}}: Başlık
+
+Kısa açıklama.
+
+{{ISSUE_URL}}
+
+Sadece commit mesajını döndür, başka bir şey yazma.

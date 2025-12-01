@@ -1,0 +1,26 @@
+Bir JIRA issue önerisi üret.
+
+Input:
+- Change summary: {{CHANGE_SUMMARY}}
+- Files: {{FILES}}
+
+Görevin:
+- Değişikliğe uygun issue tipi belirle (Feature/Bug/Task)
+- Kısa ve açıklayıcı bir başlık yaz
+- Issue açıklaması üret
+
+Kurallar:
+- Başlık maksimum 80 karakter
+- Açıklama teknik detayları içermeli
+- Acceptance criteria öner
+
+Yanıtı aşağıdaki JSON formatında döndür:
+{
+  "type": "Feature|Bug|Task",
+  "title": "Kısa başlık",
+  "description": "Detaylı açıklama",
+  "acceptanceCriteria": [
+    "Kriter 1",
+    "Kriter 2"
+  ]
+}
