@@ -20,7 +20,8 @@ async function loadConfig(repoRoot) {
 
 async function collectMinimalDiff(repoRoot) {
     // Token-efficient diff: file path + sadece değişen satırlar (max 100 satır/dosya)
-    const { stdout } = await execa('git', ['status', '--porcelain'], { cwd: repoRoot });
+    // -uall: show all untracked files individually (not collapsed into directories)
+    const { stdout } = await execa('git', ['status', '--porcelain', '-uall'], { cwd: repoRoot });
     const lines = stdout.split('\n').filter(Boolean);
 
     const result = {
