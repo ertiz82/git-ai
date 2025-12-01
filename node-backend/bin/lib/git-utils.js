@@ -70,7 +70,14 @@ async function collectMinimalDiff(repoRoot) {
 
 function formatDiffForPrompt(diffResult) {
     // AI'ya gönderilecek minimal format
-    return diffResult.diffs.map(d => `[${d.path}]\n${d.changes}`).join('\n\n');
+    const fileList = diffResult.files.map(f => f.path).join('\n');
+    const diffs = diffResult.diffs.map(d => `[${d.path}]\n${d.changes}`).join('\n\n');
+
+    return `FILES:\n${fileList}\n\nDIFFS:\n${diffs}`;
+}
+
+function getValidFiles(diffResult) {
+    return diffResult.files.map(f => f.path);
 }
 
 
@@ -88,4 +95,4 @@ function extractJiraFromBranch(branch) {
 }
 
 
-module.exports = { findRepoRoot, loadConfig, collectMinimalDiff, formatDiffForPrompt, currentBranch, extractJiraFromBranch };
+module.exports = { findRepoRoot, loadConfig, collectMinimalDiff, formatDiffForPrompt, getValidFiles, currentBranch, extractJiraFromBranch };

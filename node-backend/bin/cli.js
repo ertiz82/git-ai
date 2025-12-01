@@ -5,7 +5,7 @@ const execa = require('execa');
 const fetch = require('node-fetch');
 const argv = require('minimist')(process.argv.slice(2));
 
-const { findRepoRoot, loadConfig, collectMinimalDiff, formatDiffForPrompt, currentBranch, extractJiraFromBranch } = require('./lib/git-utils');
+const { findRepoRoot, loadConfig, collectMinimalDiff, formatDiffForPrompt, getValidFiles, currentBranch, extractJiraFromBranch } = require('./lib/git-utils');
 const { getGroupPrompt, buildPrompt } = require('./lib/prompt-templates');
 const { buildCommitMessage } = require('./lib/commit-template');
 
@@ -93,28 +93,39 @@ async function runCommit() {
         console.log(`JIRA ticket detected: ${jiraInfo.prefix}-${jiraInfo.number}`);
     }
 
-    // 6. Her grup için LOCAL template ile commit oluştur
+    // 6. Geçerli dosya listesi
+    const validFiles = getValidFiles(diffResult);
+
+    // 7. Her grup için LOCAL template ile commit oluştur
     for (const group of groups) {
         if (!group.files || group.files.length === 0) continue;
 
+        // AI'nın döndürdüğü dosyaları doğrula - sadece gerçek dosyaları al
+        const verifiedFiles = group.files.filter(f => validFiles.includes(f));
+
+        if (verifiedFiles.length === 0) {
+            console.log(`⚠ Skipping group "${group.title}" - no valid files`);
+            continue;
+        }
+
         // Commit mesajını LOCAL olarak üret - API CALL YOK
-        const commitMessage = buildCommitMessage(group, { jiraInfo, config });
+        const commitMessage = buildCommitMessage({ ...group, files: verifiedFiles }, { jiraInfo, config });
 
         if (dryRun) {
             console.log('\n--- DRY RUN ---');
-            console.log('Files:', group.files.join(', '));
+            console.log('Files:', verifiedFiles.join(', '));
             console.log('Message:\n' + commitMessage);
             console.log('---------------\n');
             continue;
         }
 
         // git add
-        await execa('git', ['add', '--'].concat(group.files), { cwd: repoRoot });
+        await execa('git', ['add', '--'].concat(verifiedFiles), { cwd: repoRoot });
 
         // git commit
         await execa('git', ['commit', '-m', commitMessage], { cwd: repoRoot });
 
-        console.log(`✓ Committed: ${group.title || group.files.join(', ')}`);
+        console.log(`✓ Committed: ${group.title || verifiedFiles.join(', ')}`);
     }
 
     if (!dryRun) {
