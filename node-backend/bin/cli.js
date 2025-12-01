@@ -123,17 +123,21 @@ async function runCommit() {
 }
 
 async function callCloudAI(apiKey, prompt, opts = {}) {
-    const url = process.env.CLOUD_AI_API_URL || 'https://api.cloud.ai/v1/generate';
+    const url = process.env.CLOUD_AI_API_URL || 'https://api.anthropic.com/v1/messages';
 
     const res = await fetch(url, {
         method: 'POST',
         headers: {
-            'Authorization': `Bearer ${apiKey}`,
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            prompt,
-            max_tokens: opts.maxTokens || 500
+            model: process.env.CLOUD_AI_MODEL || 'claude-3-haiku-20240307',
+            max_tokens: opts.maxTokens || 500,
+            messages: [
+                { role: 'user', content: prompt }
+            ]
         })
     });
 
@@ -143,7 +147,8 @@ async function callCloudAI(apiKey, prompt, opts = {}) {
     }
 
     const json = await res.json();
-    return json.text || JSON.stringify(json);
+    // Anthropic response: { content: [{ type: 'text', text: '...' }] }
+    return json.content?.[0]?.text || JSON.stringify(json);
 }
 
 main();
