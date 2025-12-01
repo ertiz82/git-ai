@@ -56,13 +56,16 @@ async function runCommit() {
 
     console.log(`Found ${diffResult.files.length} changed file(s)`);
 
-    // 2. API key kontrol (Ollama için gerekli değil)
-    const provider = process.env.AI_PROVIDER || 'anthropic';
+    // 2. API key ve provider kontrol
+    const provider = process.env.AI_PROVIDER || config?.cloud?.provider || 'anthropic';
     const apiKey = process.env.CLOUD_AI_API_KEY || config?.cloud?.apiKey;
+    const model = process.env.CLOUD_AI_MODEL || config?.cloud?.model;
 
     if (provider !== 'ollama' && !apiKey) {
         throw new Error('CLOUD_AI_API_KEY missing (set env or in jira.local.json under cloud.apiKey)');
     }
+
+    console.log(`Using AI provider: ${provider}`);
 
     // 3. Group prompt oluştur - TEK API CALL
     const diffText = formatDiffForPrompt(diffResult);
@@ -71,7 +74,12 @@ async function runCommit() {
     });
 
     console.log('Analyzing changes...');
-    const groupResponse = await callCloudAI(apiKey, groupPrompt, { maxTokens: 800 });
+    const groupResponse = await callCloudAI(apiKey, groupPrompt, {
+        maxTokens: 800,
+        provider,
+        model,
+        ollamaUrl: config?.cloud?.url
+    });
 
     // 4. Parse groups
     let groups;
@@ -136,8 +144,8 @@ async function runCommit() {
 }
 
 async function callCloudAI(apiKey, prompt, opts = {}) {
-    const provider = process.env.AI_PROVIDER || 'anthropic';
-    const model = process.env.CLOUD_AI_MODEL;
+    const provider = opts.provider || process.env.AI_PROVIDER || 'anthropic';
+    const model = opts.model || process.env.CLOUD_AI_MODEL;
 
     if (provider === 'ollama') {
         return callOllama(prompt, model || 'llama3.2', opts);
@@ -149,7 +157,7 @@ async function callCloudAI(apiKey, prompt, opts = {}) {
 }
 
 async function callOllama(prompt, model, opts = {}) {
-    const url = process.env.OLLAMA_URL || 'http://localhost:11434/api/generate';
+    const url = opts.ollamaUrl || process.env.OLLAMA_URL || 'http://localhost:11434/api/generate';
 
     const res = await fetch(url, {
         method: 'POST',
