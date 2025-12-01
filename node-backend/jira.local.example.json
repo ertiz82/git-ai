@@ -1,14 +1,7 @@
 {
-  "jira": {
-    "auth": {
-      "email": "your-email@company.com",
-      "apiToken": "your-jira-api-token"
-    }
-  },
   "cloud": {
-    "provider": "anthropic",
-    "apiKey": "sk-ant-xxxxx",
-    "model": "claude-3-haiku-20240307",
-    "apiUrl": "https://api.anthropic.com/v1/messages"
+    "provider": "ollama",
+    "model": "llama3.2",
+    "url": "http://localhost:11434/api/generate"
   }
 }
