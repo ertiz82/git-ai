@@ -308,7 +308,16 @@ git status
 
 The AI model may not be following instructions. Try:
 - A different model (`llama3.2` works well)
-- Increase `max_tokens` if response is cut off
+- Increase `maxTokens` if response is cut off (default: 4000)
+
+Add to `jira.local.json`:
+```json
+{
+  "cloud": {
+    "maxTokens": 6000
+  }
+}
+```
 
 ### "Ollama error: connection refused"
 

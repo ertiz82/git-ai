@@ -1,6 +1,7 @@
 {
   "cloud": {
     "provider": "ollama",
-    "model": "gemma3:4b"
+    "model": "gemma3:4b",
+    "maxTokens": 4000
   }
 }
