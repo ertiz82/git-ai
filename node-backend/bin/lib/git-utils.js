@@ -82,8 +82,18 @@ function getValidFiles(diffResult) {
 
 
 async function currentBranch(repoRoot) {
-    const { stdout } = await execa('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: repoRoot });
-    return stdout.trim();
+    try {
+        const { stdout } = await execa('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: repoRoot });
+        return stdout.trim();
+    } catch {
+        // No commits yet, try to get branch from HEAD file
+        try {
+            const { stdout } = await execa('git', ['symbolic-ref', '--short', 'HEAD'], { cwd: repoRoot });
+            return stdout.trim();
+        } catch {
+            return 'main';
+        }
+    }
 }
 
 
