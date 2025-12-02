@@ -45,6 +45,53 @@ function printVersion() {
 
 // ==================== INIT COMMAND ====================
 
+const STRATEGIES = [
+    {
+        id: 'simple',
+        name: 'Simple',
+        desc: 'Quick, short commit messages',
+        prompt: `STYLE: Keep it minimal.
+- title: Maximum 5 words, action verb + object (e.g., "Add login", "Fix bug")
+- summary: One short sentence, max 10 words
+- Group files loosely, fewer commits is better`
+    },
+    {
+        id: 'standard',
+        name: 'Standard',
+        desc: 'Balanced, descriptive messages',
+        prompt: `STYLE: Balanced and descriptive.
+- title: 5-10 words, conventional commit style (e.g., "Add user authentication with JWT tokens")
+- summary: One clear sentence explaining what and why
+- Group related files logically`
+    },
+    {
+        id: 'detailed',
+        name: 'Detailed',
+        desc: 'Comprehensive, thorough analysis',
+        prompt: `STYLE: Comprehensive and thorough.
+- title: Descriptive, 8-15 words, include context (e.g., "Implement secure user authentication with JWT tokens and refresh mechanism")
+- summary: Detailed explanation (2-3 sentences) covering what changed, why, and any important details
+- Group files by specific functionality, prefer more focused commits`
+    }
+];
+
+const LANGUAGES = [
+    { id: 'en', name: 'English' },
+    { id: 'tr', name: 'Türkçe' },
+    { id: 'de', name: 'Deutsch' },
+    { id: 'fr', name: 'Français' },
+    { id: 'es', name: 'Español' },
+    { id: 'pt', name: 'Português' },
+    { id: 'it', name: 'Italiano' },
+    { id: 'nl', name: 'Nederlands' },
+    { id: 'pl', name: 'Polski' },
+    { id: 'ru', name: 'Русский' },
+    { id: 'zh', name: '中文' },
+    { id: 'ja', name: '日本語' },
+    { id: 'ko', name: '한국어' },
+    { id: 'ar', name: 'العربية' }
+];
+
 const PROVIDERS = {
     ollama: {
         name: 'Ollama (Free, Local)',
@@ -103,6 +150,16 @@ function createReadlineInterface() {
 
 function ask(rl, question) {
     return new Promise(resolve => rl.question(question, resolve));
+}
+
+function getLanguageName(langCode) {
+    const lang = LANGUAGES.find(l => l.id === langCode);
+    return lang ? lang.name : 'English';
+}
+
+function getStrategyPrompt(strategyId) {
+    const strategy = STRATEGIES.find(s => s.id === strategyId);
+    return strategy ? strategy.prompt : STRATEGIES[1].prompt; // default: standard
 }
 
 async function selectOption(rl, prompt, options) {
@@ -300,18 +357,28 @@ async function runInit() {
             }
         }
 
-        // 4. MaxTokens setting
+        // 4. Strategy setting
+        const selectedStrategy = await selectOption(rl, 'Select commit message strategy:', STRATEGIES);
+        const strategy = selectedStrategy.id;
+
+        // 5. Language setting
+        const selectedLanguage = await selectOption(rl, 'Select output language for commit messages:', LANGUAGES);
+        const language = selectedLanguage.id;
+
+        // 6. MaxTokens setting
         console.log('\nMaxTokens controls response length. Higher = more files can be grouped.');
         console.log('Recommended: 4000 (default), 8000 (large projects), 16000 (very large)');
         const maxTokensAnswer = await ask(rl, 'MaxTokens (press Enter for 4000): ');
         const maxTokens = parseInt(maxTokensAnswer, 10) || 4000;
 
-        // 5. Create jira.local.json
+        // 7. Create jira.local.json
         const localConfig = {
             cloud: {
                 provider,
                 model,
-                maxTokens
+                maxTokens,
+                strategy,
+                language
             }
         };
 
@@ -394,8 +461,19 @@ async function runCommit() {
 
     // 3. Group prompt oluştur - TEK API CALL
     const diffText = formatDiffForPrompt(diffResult);
+    const language = config?.cloud?.language || 'en';
+    const strategy = config?.cloud?.strategy || 'standard';
+
+    const languageInstruction = language === 'en'
+        ? ''
+        : `IMPORTANT: Write the "title" and "summary" fields in ${getLanguageName(language)} language.`;
+
+    const strategyInstruction = getStrategyPrompt(strategy);
+
     const groupPrompt = buildPrompt(getGroupPrompt(), {
-        DIFF_SNIPPETS: diffText
+        DIFF_SNIPPETS: diffText,
+        LANGUAGE_INSTRUCTION: languageInstruction,
+        STRATEGY_INSTRUCTION: strategyInstruction
     });
 
     console.log('Analyzing changes...');
@@ -483,9 +561,8 @@ async function runCommit() {
             continue;
         }
 
-        // git commit (mesajı tek satıra indir)
-        const safeMessage = commitMessage.replace(/\n+/g, ' ').trim();
-        await execa('git', ['commit', '-m', safeMessage], { cwd: repoRoot });
+        // git commit (multiline mesaj destekli)
+        await execa('git', ['commit', '-m', commitMessage], { cwd: repoRoot });
 
         console.log(`✓ Committed: ${group.title || verifiedFiles.join(', ')}`);
     }
